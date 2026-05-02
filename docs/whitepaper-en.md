@@ -5,8 +5,6 @@
 
 ---
 
-- [🇮🇩 Bahasa Indonesia](README-ID.md)
-
 ## Abstract
 
 RideChain is a decentralized, peer-to-peer ride-hailing protocol built on the Polygon PoS blockchain. It addresses the fundamental asymmetry of power between ride-hailing platform operators and their driver partners — a structural problem in which a centralized third party unilaterally dictates pricing, enforces opaque policies, and extracts disproportionate value from both drivers and passengers without meaningful accountability.
