@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+
+  ridechain-node:
+    build: .
+    container_name: ridechain-node
+    restart: unless-stopped
+    ports:
+      - "4001:4001"   # P2P
+      - "8080:8080"   # HTTP API
+    env_file: .env
+    depends_on:
+      - osrm
+    networks:
+      - ridechain
+
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend:latest
+    container_name: ridechain-osrm
+    restart: unless-stopped
+    volumes:
+      - ./data/osm:/data
+    command: >
+      osrm-routed
+      --algorithm mld
+      /data/indonesia-latest.osrm
+    ports:
+      - "5000:5000"
+    networks:
+      - ridechain
+
+networks:
+  ridechain:
+    driver: bridge

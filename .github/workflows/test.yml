@@ -1,0 +1,59 @@
+name: Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  contracts:
+    name: Smart Contract Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: forge install
+
+      - name: Build contracts
+        run: forge build --sizes
+
+      - name: Run tests
+        run: forge test -vv
+
+      - name: Run tests with gas report
+        run: forge test --gas-report
+
+      - name: Check test coverage
+        run: forge coverage --report summary
+
+  node:
+    name: Node Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: node/package.json
+
+      - name: Install dependencies
+        working-directory: node
+        run: npm install
+
+      - name: Lint
+        working-directory: node
+        run: npm run lint --if-present

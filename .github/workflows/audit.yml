@@ -1,0 +1,79 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # run every Monday at 08:00 UTC
+    - cron: '0 8 * * 1'
+
+jobs:
+
+  slither:
+    name: Slither Static Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: forge install
+
+      - name: Run Slither
+        uses: crytic/slither-action@v0.4.0
+        with:
+          target: contracts/
+          slither-args: >
+            --exclude-dependencies
+            --filter-paths "lib/"
+          fail-on: high
+
+  mythril:
+    name: Mythril Symbolic Execution
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Build contracts
+        run: forge build
+
+      - name: Install Mythril
+        run: pip install mythril
+
+      - name: Run Mythril on Registry
+        run: >
+          myth analyze contracts/Registry.sol
+          --solc-json remappings.txt
+          --execution-timeout 120
+          || true
+
+      - name: Run Mythril on RideSession
+        run: >
+          myth analyze contracts/RideSession.sol
+          --solc-json remappings.txt
+          --execution-timeout 120
+          || true
+
+      - name: Run Mythril on Dispute
+        run: >
+          myth analyze contracts/Dispute.sol
+          --solc-json remappings.txt
+          --execution-timeout 120
+          || true
