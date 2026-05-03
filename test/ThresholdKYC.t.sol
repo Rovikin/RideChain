@@ -1,4 +1,3 @@
-cat > test/ThresholdKYC.t.sol << 'EOF'
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.24;
 
@@ -628,4 +627,3 @@ contract ThresholdKYCTest is Test {
         );
     }
 }
-EOF
