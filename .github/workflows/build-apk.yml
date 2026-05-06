@@ -42,15 +42,24 @@ jobs:
             /tmp/ridechain
 
           rm -rf /tmp/ridechain/lib
-          cp -r android/lib    /tmp/ridechain/lib
+          cp -r android/lib         /tmp/ridechain/lib
           cp    android/pubspec.yaml /tmp/ridechain/pubspec.yaml
-          cp -r android/assets /tmp/ridechain/assets
+          cp -r android/assets      /tmp/ridechain/assets
 
+          # fix minSdkVersion
           sed -i 's/minSdkVersion 19/minSdkVersion 26/g' \
             /tmp/ridechain/android/app/build.gradle
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/g' \
             /tmp/ridechain/android/app/build.gradle
 
+          # fix kotlin version — must be 1.9.0+ for Flutter 3.19
+          sed -i "s/ext.kotlin_version = '.*'/ext.kotlin_version = '1.9.0'/g" \
+            /tmp/ridechain/android/build.gradle
+
+          # verify kotlin version was updated
+          grep "kotlin_version" /tmp/ridechain/android/build.gradle
+
+          # fix AndroidManifest
           cat > /tmp/ridechain/android/app/src/main/AndroidManifest.xml << 'MANIFEST'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools">
@@ -124,12 +133,12 @@ jobs:
           KEY_ALIAS:          ${{ secrets.KEY_ALIAS }}
           KEY_STORE_FILE:     ${{ secrets.KEY_STORE_FILE }}
         run: |
-          echo "$KEY_STORE_FILE" | base64 -d > android/app/keystore.p12
-          cat > android/key.properties << PROPS
+          echo "$KEY_STORE_FILE" | base64 -d > /tmp/ridechain/android/app/keystore.p12
+          cat > /tmp/ridechain/android/key.properties << PROPS
           storePassword=$KEY_STORE_PASSWORD
           keyPassword=$KEY_PASSWORD
           keyAlias=$KEY_ALIAS
-          storeFile=keystore.p12
+          storeFile=app/keystore.p12
           storeType=PKCS12
           PROPS
           flutter build apk --release
