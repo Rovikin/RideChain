@@ -34,50 +34,90 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Create Flutter project scaffold
+      - name: Create valid Flutter project
         run: |
-          flutter create --org com.ridechain --project-name ridechain /tmp/scaffold
+          # create fresh Flutter project
+          flutter create \
+            --org com.ridechain \
+            --project-name ridechain \
+            /tmp/ridechain
 
-          # copy gradle wrapper from scaffold
-          cp -r /tmp/scaffold/android/gradle      android/android/
-          cp    /tmp/scaffold/android/gradlew     android/android/
-          cp    /tmp/scaffold/android/gradlew.bat android/android/
+          # replace lib/ with our source code
+          rm -rf /tmp/ridechain/lib
+          cp -r android/lib /tmp/ridechain/lib
 
-          # overwrite scaffold AndroidManifest with ours
-          cp android/android/app/src/main/AndroidManifest.xml \
-             /tmp/scaffold/android/app/src/main/AndroidManifest.xml
+          # replace pubspec.yaml with ours
+          cp android/pubspec.yaml /tmp/ridechain/pubspec.yaml
 
-          # overwrite scaffold build.gradle with ours
-          cp android/android/app/build.gradle \
-             /tmp/scaffold/android/app/build.gradle
+          # copy assets
+          cp -r android/assets /tmp/ridechain/assets
 
-          # overwrite scaffold MainActivity with ours
-          mkdir -p /tmp/scaffold/android/app/src/main/kotlin/com/ridechain/app
-          cp android/android/app/src/main/kotlin/com/ridechain/app/MainActivity.kt \
-             /tmp/scaffold/android/app/src/main/kotlin/com/ridechain/app/MainActivity.kt
+          # fix minSdkVersion
+          sed -i 's/minSdkVersion 19/minSdkVersion 26/g' \
+            /tmp/ridechain/android/app/build.gradle
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/g' \
+            /tmp/ridechain/android/app/build.gradle
 
-          # use scaffold's android dir entirely (has correct gradle setup)
-          # but keep our app source files
-          cp -r /tmp/scaffold/android/app/src/main/res \
-                android/android/app/src/main/ 2>/dev/null || true
+          # add permissions to AndroidManifest
+          cat > /tmp/ridechain/android/app/src/main/AndroidManifest.xml << 'MANIFEST'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+              <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+              <uses-permission android:name="android.permission.WAKE_LOCK" />
+              <uses-permission android:name="android.permission.VIBRATE" />
+              <application
+                  android:label="RideChain"
+                  android:name="${applicationName}"
+                  android:icon="@mipmap/ic_launcher">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:launchMode="singleTop"
+                      android:theme="@style/LaunchTheme"
+                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+                      android:hardwareAccelerated="true"
+                      android:windowSoftInputMode="adjustResize">
+                      <meta-data
+                          android:name="io.flutter.embedding.android.NormalTheme"
+                          android:resource="@style/NormalTheme" />
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+                  <service
+                      android:name="id.flutter.flutter_background_service.BackgroundService"
+                      android:foregroundServiceType="location"
+                      android:exported="false" />
+                  <meta-data
+                      android:name="flutterEmbedding"
+                      android:value="2" />
+              </application>
+          </manifest>
+          MANIFEST
 
       - name: Get dependencies
-        working-directory: android
+        working-directory: /tmp/ridechain
         run: flutter pub get
 
       - name: Run analyzer
-        working-directory: android
+        working-directory: /tmp/ridechain
         run: flutter analyze --no-fatal-infos
         continue-on-error: true
 
       - name: Build debug APK
         if: ${{ github.event.inputs.build_type == 'debug' }}
-        working-directory: android
+        working-directory: /tmp/ridechain
         run: flutter build apk --debug
 
       - name: Build release APK
         if: ${{ github.event.inputs.build_type == 'release' }}
-        working-directory: android
+        working-directory: /tmp/ridechain
         env:
           KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
           KEY_PASSWORD:       ${{ secrets.KEY_PASSWORD }}
@@ -99,7 +139,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ridechain-debug-${{ github.sha }}
-          path: android/build/app/outputs/flutter-apk/app-debug.apk
+          path: /tmp/ridechain/build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 7
 
       - name: Upload release APK
@@ -107,5 +147,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ridechain-release-${{ github.sha }}
-          path: android/build/app/outputs/flutter-apk/app-release.apk
+          path: /tmp/ridechain/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
