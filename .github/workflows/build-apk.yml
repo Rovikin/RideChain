@@ -36,85 +36,21 @@ jobs:
 
       - name: Create valid Flutter project
         run: |
-          set -x
-
-          flutter create \
-            --org com.ridechain \
-            --project-name ridechain \
-            /tmp/ridechain
+          flutter create --org com.ridechain --project-name ridechain /tmp/ridechain
 
           rm -rf /tmp/ridechain/lib
           cp -r android/lib /tmp/ridechain/lib
-
           cp android/pubspec.yaml /tmp/ridechain/pubspec.yaml
 
-          # assets — ignore if empty
           mkdir -p /tmp/ridechain/assets/fonts
           mkdir -p /tmp/ridechain/assets/images
-          cp -r android/assets/. /tmp/ridechain/assets/ 2>/dev/null || true
 
-          # fix minSdkVersion
-          sed -i 's/minSdkVersion 19/minSdkVersion 26/g' \
-            /tmp/ridechain/android/app/build.gradle
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/g' \
-            /tmp/ridechain/android/app/build.gradle
+          sed -i 's/minSdkVersion 19/minSdkVersion 26/g' /tmp/ridechain/android/app/build.gradle
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/g' /tmp/ridechain/android/app/build.gradle
+          sed -i "s/ext.kotlin_version = '.*'/ext.kotlin_version = '1.9.0'/g" /tmp/ridechain/android/build.gradle
 
-          # fix kotlin version
-          sed -i "s/ext.kotlin_version = '.*'/ext.kotlin_version = '1.9.0'/g" \
-            /tmp/ridechain/android/build.gradle
-
-          echo "=== kotlin version ===" 
-          grep "kotlin_version" /tmp/ridechain/android/build.gradle
-
-          echo "=== minSdkVersion ==="
-          grep "minSdkVersion" /tmp/ridechain/android/app/build.gradle
-
-          # fix AndroidManifest
-          cat > /tmp/ridechain/android/app/src/main/AndroidManifest.xml << 'MANIFEST'
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                    xmlns:tools="http://schemas.android.com/tools">
-              <uses-permission android:name="android.permission.INTERNET" />
-              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-              <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-              <uses-permission android:name="android.permission.WAKE_LOCK" />
-              <uses-permission android:name="android.permission.VIBRATE" />
-              <application
-                  android:label="RideChain"
-                  android:name="${applicationName}"
-                  android:icon="@mipmap/ic_launcher">
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:launchMode="singleTop"
-                      android:theme="@style/LaunchTheme"
-                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-                      android:hardwareAccelerated="true"
-                      android:windowSoftInputMode="adjustResize">
-                      <meta-data
-                          android:name="io.flutter.embedding.android.NormalTheme"
-                          android:resource="@style/NormalTheme" />
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
-                      </intent-filter>
-                  </activity>
-                  <service
-                      android:name="id.flutter.flutter_background_service.BackgroundService"
-                      android:foregroundServiceType="location"
-                      android:exported="false"
-                      tools:replace="android:exported" />
-                  <meta-data
-                      android:name="flutterEmbedding"
-                      android:value="2" />
-              </application>
-          </manifest>
-          MANIFEST
-
-          echo "=== Scaffold step complete ==="
+          cp android/android_config/app/src/main/AndroidManifest.xml \
+             /tmp/ridechain/android/app/src/main/AndroidManifest.xml
 
       - name: Get dependencies
         working-directory: /tmp/ridechain
