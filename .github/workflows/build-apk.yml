@@ -37,11 +37,20 @@ jobs:
       - name: Create Flutter project scaffold
         run: |
           flutter create --org com.ridechain --project-name ridechain /tmp/ridechain_scaffold
-          # copy scaffold android directory over ours (keeps V2 embedding config)
-          cp -r /tmp/ridechain_scaffold/android/. android/android/
-          # restore our AndroidManifest
-          cp android/android/app/src/main/AndroidManifest.xml \
-             /tmp/ridechain_scaffold/android/app/src/main/AndroidManifest.xml || true
+          # copy scaffold android config but keep our source files
+          cp -r /tmp/ridechain_scaffold/android/gradle        android/android/
+          cp -r /tmp/ridechain_scaffold/android/gradlew       android/android/
+          cp -r /tmp/ridechain_scaffold/android/gradlew.bat   android/android/
+          cp -r /tmp/ridechain_scaffold/android/.gradle       android/android/ 2>/dev/null || true
+          # fix minSdkVersion to 26
+          sed -i 's/minSdkVersion 19/minSdkVersion 26/g' \
+            /tmp/ridechain_scaffold/android/app/build.gradle || true
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/g' \
+            /tmp/ridechain_scaffold/android/app/build.gradle || true
+
+      - name: Fix minSdkVersion in local.properties
+        run: |
+          echo "flutter.minSdkVersion=26" >> android/android/local.properties 2>/dev/null || true
 
       - name: Get dependencies
         working-directory: android
@@ -55,7 +64,7 @@ jobs:
       - name: Build debug APK
         if: ${{ github.event.inputs.build_type == 'debug' }}
         working-directory: android
-        run: flutter build apk --debug
+        run: flutter build apk --debug --dart-define=MIN_SDK_VERSION=26
 
       - name: Build release APK
         if: ${{ github.event.inputs.build_type == 'release' }}
