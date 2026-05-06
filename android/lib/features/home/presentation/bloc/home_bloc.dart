@@ -31,12 +31,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     Emitter<HomeState> emit,
   ) async {
     emit(HomeLoading());
-
     try {
-      // get balance
       final balance = await _getBalance(event.address);
 
-      // get location and nearby drivers
       Position? position;
       try {
         position = await Geolocator.getCurrentPosition(
@@ -44,13 +41,12 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         ).timeout(const Duration(seconds: 10));
       } catch (_) {}
 
-      List drivers = [];
-      if (position != null) {
-        drivers = await _getNearbyDrivers(
-          lat: position.latitude,
-          lng: position.longitude,
-        );
-      }
+      final drivers = position != null
+          ? await _getNearbyDrivers(
+              lat: position.latitude,
+              lng: position.longitude,
+            )
+          : [];
 
       emit(HomeLoaded(
         balance: balance,
@@ -69,7 +65,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   ) async {
     if (state is! HomeLoaded) return;
     final current = state as HomeLoaded;
-
     try {
       final drivers = await _getNearbyDrivers(
         lat: event.lat,
@@ -85,7 +80,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   ) async {
     if (state is! HomeLoaded) return;
     final current = state as HomeLoaded;
-
     try {
       final balance = await _getBalance(event.address);
       emit(current.copyWith(balance: balance));

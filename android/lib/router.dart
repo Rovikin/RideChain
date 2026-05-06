@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'features/auth/presentation/bloc/auth_state.dart';
 import 'features/auth/presentation/pages/onboarding_page.dart';
 import 'features/auth/presentation/pages/create_wallet_page.dart';
 import 'features/auth/presentation/pages/import_wallet_page.dart';
@@ -26,39 +27,39 @@ final appRouter = GoRouter(
   },
   routes: [
     GoRoute(
-      path: '/onboarding',
+      path:    '/onboarding',
       builder: (context, state) => const OnboardingPage(),
     ),
     GoRoute(
-      path: '/wallet/create',
+      path:    '/wallet/create',
       builder: (context, state) => const CreateWalletPage(),
     ),
     GoRoute(
-      path: '/wallet/import',
+      path:    '/wallet/import',
       builder: (context, state) => const ImportWalletPage(),
     ),
     GoRoute(
-      path: '/home',
+      path:    '/home',
       builder: (context, state) => const HomePage(),
       routes: [
         GoRoute(
-          path: 'order',
+          path:    'order',
           builder: (context, state) => const OrderPage(),
         ),
         GoRoute(
-          path: 'trip/:sessionId',
+          path:    'trip/:sessionId',
           builder: (context, state) => TripPage(
             sessionId: state.pathParameters['sessionId']!,
           ),
         ),
         GoRoute(
-          path: 'dispute/:sessionId',
+          path:    'dispute/:sessionId',
           builder: (context, state) => DisputePage(
             sessionId: state.pathParameters['sessionId']!,
           ),
         ),
         GoRoute(
-          path: 'profile',
+          path:    'profile',
           builder: (context, state) => const ProfilePage(),
         ),
       ],
