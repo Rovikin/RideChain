@@ -1,7 +1,0 @@
--keep class io.flutter.** { *; }
--keep class io.flutter.plugins.** { *; }
--keep class org.web3j.** { *; }
--keepattributes Signature
--keepattributes *Annotation*
--keep class org.bouncycastle.** { *; }
--keep class com.ridechain.** { *; }

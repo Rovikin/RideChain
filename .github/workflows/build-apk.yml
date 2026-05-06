@@ -36,21 +36,30 @@ jobs:
 
       - name: Create Flutter project scaffold
         run: |
-          flutter create --org com.ridechain --project-name ridechain /tmp/ridechain_scaffold
-          # copy scaffold android config but keep our source files
-          cp -r /tmp/ridechain_scaffold/android/gradle        android/android/
-          cp -r /tmp/ridechain_scaffold/android/gradlew       android/android/
-          cp -r /tmp/ridechain_scaffold/android/gradlew.bat   android/android/
-          cp -r /tmp/ridechain_scaffold/android/.gradle       android/android/ 2>/dev/null || true
-          # fix minSdkVersion to 26
-          sed -i 's/minSdkVersion 19/minSdkVersion 26/g' \
-            /tmp/ridechain_scaffold/android/app/build.gradle || true
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/g' \
-            /tmp/ridechain_scaffold/android/app/build.gradle || true
+          flutter create --org com.ridechain --project-name ridechain /tmp/scaffold
 
-      - name: Fix minSdkVersion in local.properties
-        run: |
-          echo "flutter.minSdkVersion=26" >> android/android/local.properties 2>/dev/null || true
+          # copy gradle wrapper from scaffold
+          cp -r /tmp/scaffold/android/gradle      android/android/
+          cp    /tmp/scaffold/android/gradlew     android/android/
+          cp    /tmp/scaffold/android/gradlew.bat android/android/
+
+          # overwrite scaffold AndroidManifest with ours
+          cp android/android/app/src/main/AndroidManifest.xml \
+             /tmp/scaffold/android/app/src/main/AndroidManifest.xml
+
+          # overwrite scaffold build.gradle with ours
+          cp android/android/app/build.gradle \
+             /tmp/scaffold/android/app/build.gradle
+
+          # overwrite scaffold MainActivity with ours
+          mkdir -p /tmp/scaffold/android/app/src/main/kotlin/com/ridechain/app
+          cp android/android/app/src/main/kotlin/com/ridechain/app/MainActivity.kt \
+             /tmp/scaffold/android/app/src/main/kotlin/com/ridechain/app/MainActivity.kt
+
+          # use scaffold's android dir entirely (has correct gradle setup)
+          # but keep our app source files
+          cp -r /tmp/scaffold/android/app/src/main/res \
+                android/android/app/src/main/ 2>/dev/null || true
 
       - name: Get dependencies
         working-directory: android
@@ -64,7 +73,7 @@ jobs:
       - name: Build debug APK
         if: ${{ github.event.inputs.build_type == 'debug' }}
         working-directory: android
-        run: flutter build apk --debug --dart-define=MIN_SDK_VERSION=26
+        run: flutter build apk --debug
 
       - name: Build release APK
         if: ${{ github.event.inputs.build_type == 'release' }}
