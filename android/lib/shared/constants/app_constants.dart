@@ -4,8 +4,8 @@ class AppConstants {
 
   // blockchain
   static const polygonChainId    = 137;
-  static const polygonRpcUrl     = 'https://polygon-rpc.com'\;
-  static const polygonExplorer   = 'https://polygonscan.com'\;
+  static const polygonRpcUrl     = 'https://polygon-rpc.com';
+  static const polygonExplorer   = 'https://polygonscan.com';
 
   // contracts — filled after deployment
   static const registryContract     = '';
