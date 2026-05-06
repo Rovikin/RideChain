@@ -36,31 +36,25 @@ jobs:
 
       - name: Create valid Flutter project
         run: |
-          # create fresh Flutter project
           flutter create \
             --org com.ridechain \
             --project-name ridechain \
             /tmp/ridechain
 
-          # replace lib/ with our source code
           rm -rf /tmp/ridechain/lib
-          cp -r android/lib /tmp/ridechain/lib
-
-          # replace pubspec.yaml with ours
-          cp android/pubspec.yaml /tmp/ridechain/pubspec.yaml
-
-          # copy assets
+          cp -r android/lib    /tmp/ridechain/lib
+          cp    android/pubspec.yaml /tmp/ridechain/pubspec.yaml
           cp -r android/assets /tmp/ridechain/assets
 
-          # fix minSdkVersion
           sed -i 's/minSdkVersion 19/minSdkVersion 26/g' \
             /tmp/ridechain/android/app/build.gradle
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/g' \
             /tmp/ridechain/android/app/build.gradle
 
-          # add permissions to AndroidManifest
           cat > /tmp/ridechain/android/app/src/main/AndroidManifest.xml << 'MANIFEST'
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                    xmlns:tools="http://schemas.android.com/tools">
+
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -70,10 +64,12 @@ jobs:
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
               <uses-permission android:name="android.permission.WAKE_LOCK" />
               <uses-permission android:name="android.permission.VIBRATE" />
+
               <application
                   android:label="RideChain"
                   android:name="${applicationName}"
                   android:icon="@mipmap/ic_launcher">
+
                   <activity
                       android:name=".MainActivity"
                       android:exported="true"
@@ -90,13 +86,17 @@ jobs:
                           <category android:name="android.intent.category.LAUNCHER"/>
                       </intent-filter>
                   </activity>
+
                   <service
                       android:name="id.flutter.flutter_background_service.BackgroundService"
                       android:foregroundServiceType="location"
-                      android:exported="false" />
+                      android:exported="false"
+                      tools:replace="android:exported" />
+
                   <meta-data
                       android:name="flutterEmbedding"
                       android:value="2" />
+
               </application>
           </manifest>
           MANIFEST
