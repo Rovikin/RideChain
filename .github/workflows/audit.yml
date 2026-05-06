@@ -1,11 +1,7 @@
 name: Security Audit
 
 on:
-  push:
-    branches: [main]
-  schedule:
-    # run every Monday at 08:00 UTC
-    - cron: '0 8 * * 1'
+  workflow_dispatch:
 
 jobs:
 
