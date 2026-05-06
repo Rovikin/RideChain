@@ -1,0 +1,91 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+
+jobs:
+  build:
+    name: Build Flutter APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        working-directory: android
+        run: flutter pub get
+
+      - name: Run analyzer
+        working-directory: android
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests
+        working-directory: android
+        run: flutter test
+
+      - name: Build debug APK
+        if: ${{ github.event.inputs.build_type == 'debug' }}
+        working-directory: android
+        run: flutter build apk --debug
+
+      - name: Build release APK
+        if: ${{ github.event.inputs.build_type == 'release' }}
+        working-directory: android
+        env:
+          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          KEY_PASSWORD:       ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS:          ${{ secrets.KEY_ALIAS }}
+          KEY_STORE_FILE:     ${{ secrets.KEY_STORE_FILE }}
+        run: |
+          # decode p12 keystore from base64 secret
+          echo "$KEY_STORE_FILE" | base64 -d > android/app/keystore.p12
+
+          # write key.properties for Gradle
+          cat > android/key.properties << PROPS
+          storePassword=$KEY_STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=keystore.p12
+          storeType=PKCS12
+          PROPS
+
+          flutter build apk --release
+
+      - name: Upload debug APK
+        if: ${{ github.event.inputs.build_type == 'debug' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ridechain-debug-${{ github.sha }}
+          path: android/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7
+
+      - name: Upload release APK
+        if: ${{ github.event.inputs.build_type == 'release' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ridechain-release-${{ github.sha }}
+          path: android/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
