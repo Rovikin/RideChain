@@ -12,7 +12,7 @@
 
     <application
         android:label="RideChain"
-        android:name="${applicationName}"
+        android:name=".Application"
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="false"
         android:usesCleartextTraffic="false">
@@ -40,8 +40,10 @@
             android:foregroundServiceType="location"
             android:exported="false" />
 
+        <!-- V2 embedding required -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
     </application>
 </manifest>
