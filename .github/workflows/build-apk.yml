@@ -38,16 +38,58 @@ jobs:
         run: |
           flutter create --org com.ridechain --project-name ridechain /tmp/ridechain
 
+          # show original build.gradle for debugging
+          echo "=== ORIGINAL build.gradle ==="
+          cat /tmp/ridechain/android/build.gradle
+
           rm -rf /tmp/ridechain/lib
           cp -r android/lib /tmp/ridechain/lib
           cp android/pubspec.yaml /tmp/ridechain/pubspec.yaml
-
           mkdir -p /tmp/ridechain/assets/fonts
           mkdir -p /tmp/ridechain/assets/images
 
-          sed -i 's/minSdkVersion 19/minSdkVersion 26/g' /tmp/ridechain/android/app/build.gradle
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/g' /tmp/ridechain/android/app/build.gradle
-          sed -i "s/ext.kotlin_version = '.*'/ext.kotlin_version = '1.9.0'/g" /tmp/ridechain/android/build.gradle
+          # fix minSdkVersion
+          sed -i 's/minSdkVersion 19/minSdkVersion 26/g' \
+            /tmp/ridechain/android/app/build.gradle
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/g' \
+            /tmp/ridechain/android/app/build.gradle
+
+          # replace entire build.gradle with correct kotlin version
+          cat > /tmp/ridechain/android/build.gradle << 'GRADLE'
+          buildscript {
+              ext.kotlin_version = '1.9.0'
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:7.3.0'
+                  classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+              }
+          }
+
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          rootProject.buildDir = '../build'
+          subprojects {
+              project.buildDir = "${rootProject.buildDir}/${project.name}"
+          }
+          subprojects {
+              project.evaluationDependsOn(':app')
+          }
+
+          tasks.register("clean", Delete) {
+              delete rootProject.buildDir
+          }
+          GRADLE
+
+          echo "=== UPDATED build.gradle ==="
+          cat /tmp/ridechain/android/build.gradle
 
           cp android/android_config/app/src/main/AndroidManifest.xml \
              /tmp/ridechain/android/app/src/main/AndroidManifest.xml
